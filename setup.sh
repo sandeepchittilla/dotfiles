@@ -290,7 +290,8 @@ fi # end LINK_ONLY guard for sections 9-11
 
 echo ""
 if $LINK_ONLY; then
-    echo -e "${GREEN}Symlinks updated!${NC}"
+    source "$HOME/.zshrc"
+    echo -e "${GREEN}Symlinks updated and shell reloaded!${NC}"
 else
     echo -e "${GREEN}Setup complete!${NC}"
 fi
