@@ -106,7 +106,7 @@ for cask in "${CASKS[@]}"; do
         ok "$cask (already installed)"
     else
         info "Installing $cask..."
-        brew install --cask "$cask"
+        brew install --cask "$cask" || warn "$cask already exists, skipping"
     fi
 done
 
@@ -145,25 +145,21 @@ AUTOSUGGESTIONS_TAG="v0.7.1"
 SYNTAX_HIGHLIGHTING_TAG="0.8.0"
 P10K_TAG="v1.20.0"
 
-declare -A ZSH_PLUGINS=(
-    [zsh-autosuggestions]="https://github.com/zsh-users/zsh-autosuggestions"
-    [zsh-syntax-highlighting]="https://github.com/zsh-users/zsh-syntax-highlighting"
-)
-declare -A ZSH_PLUGIN_TAGS=(
-    [zsh-autosuggestions]="$AUTOSUGGESTIONS_TAG"
-    [zsh-syntax-highlighting]="$SYNTAX_HIGHLIGHTING_TAG"
-)
-
-for plugin in "${!ZSH_PLUGINS[@]}"; do
-    if [[ ! -d "$OMZ_CUSTOM/plugins/$plugin" ]]; then
-        info "Installing $plugin@${ZSH_PLUGIN_TAGS[$plugin]}..."
-        git clone --quiet --branch "${ZSH_PLUGIN_TAGS[$plugin]}" --depth=1 \
-            "${ZSH_PLUGINS[$plugin]}" "$OMZ_CUSTOM/plugins/$plugin"
-        ok "$plugin@${ZSH_PLUGIN_TAGS[$plugin]} installed"
+install_zsh_plugin() {
+    local name="$1" url="$2" tag="$3"
+    if [[ ! -d "$OMZ_CUSTOM/plugins/$name" ]]; then
+        info "Installing $name@$tag..."
+        git clone --quiet --branch "$tag" --depth=1 "$url" "$OMZ_CUSTOM/plugins/$name"
+        ok "$name@$tag installed"
     else
-        ok "$plugin already installed"
+        ok "$name already installed"
     fi
-done
+}
+
+install_zsh_plugin zsh-autosuggestions \
+    https://github.com/zsh-users/zsh-autosuggestions "$AUTOSUGGESTIONS_TAG"
+install_zsh_plugin zsh-syntax-highlighting \
+    https://github.com/zsh-users/zsh-syntax-highlighting "$SYNTAX_HIGHLIGHTING_TAG"
 
 # Themes
 if [[ ! -d "$OMZ_CUSTOM/themes/powerlevel10k" ]]; then
