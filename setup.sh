@@ -18,6 +18,10 @@ warn()    { echo -e "${YELLOW}[WARN]${NC} $1"; }
 err()     { echo -e "${RED}[ERROR]${NC} $1"; }
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LINK_ONLY=false
+if [[ "${1:-}" == "--link" ]]; then
+    LINK_ONLY=true
+fi
 
 # ── Sanity checks ──────────────────────────────────────────────────
 
@@ -26,7 +30,7 @@ if [[ "$OSTYPE" != darwin* ]]; then
     exit 1
 fi
 
-if ! xcode-select -p &>/dev/null; then
+if ! $LINK_ONLY && ! xcode-select -p &>/dev/null; then
     err "Xcode Command Line Tools are required. Install them with: xcode-select --install"
     exit 1
 fi
@@ -51,6 +55,7 @@ backup_and_link() {
     ok "Linked $(basename "$dest")"
 }
 
+if ! $LINK_ONLY; then
 # ── 1. Homebrew ────────────────────────────────────────────────────
 
 info "Checking Homebrew..."
@@ -171,6 +176,7 @@ else
     ok "Powerlevel10k already installed"
 fi
 
+fi # end LINK_ONLY guard for sections 1-4
 
 # ── 5. Symlink home dotfiles ─────────────────────────────────────
 
@@ -185,6 +191,7 @@ for file in "${HOME_FILES[@]}"; do
     fi
 done
 
+if ! $LINK_ONLY; then
 # ── 6. Git config from template ──────────────────────────────────
 
 info "Setting up .gitconfig..."
@@ -206,6 +213,7 @@ if [[ -f "$DOTFILES_DIR/home/.gitconfig.template" ]]; then
         "$DOTFILES_DIR/home/.gitconfig.template" > "$HOME/.gitconfig"
     ok ".gitconfig generated"
 fi
+fi # end LINK_ONLY guard for section 6
 
 # ── 7. Symlink config directories ────────────────────────────────
 
@@ -240,6 +248,7 @@ if ! echo "$PATH" | grep -q "$HOME/.local/bin"; then
     warn "~/.local/bin is not on PATH. It will be after shell restart (set in .zprofile)."
 fi
 
+if ! $LINK_ONLY; then
 # ── 9. Python via pyenv ──────────────────────────────────────────
 
 info "Setting up pyenv global Python..."
@@ -275,12 +284,18 @@ if [[ ! -d "$HOME/google-cloud-sdk" ]]; then
 else
     ok "Google Cloud SDK already installed"
 fi
+fi # end LINK_ONLY guard for sections 9-11
 
 # ── Done ──────────────────────────────────────────────────────────
 
 echo ""
-echo -e "${GREEN}Setup complete!${NC}"
+if $LINK_ONLY; then
+    echo -e "${GREEN}Symlinks updated!${NC}"
+else
+    echo -e "${GREEN}Setup complete!${NC}"
+fi
 echo ""
+if ! $LINK_ONLY; then
 echo "Installed:"
 echo "  - Homebrew packages: ${FORMULAE[*]}"
 echo "  - Casks: ${CASKS[*]}"
@@ -294,4 +309,5 @@ echo "Next steps:"
 echo "  1. Restart your terminal (or: source ~/.zshrc)"
 echo "  2. Kitty is installed — launch it and your config will load"
 echo "  3. Install a window manager of your choice"
+fi
 echo ""

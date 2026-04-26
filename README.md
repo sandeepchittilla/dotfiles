@@ -17,6 +17,16 @@ cd ~/.dotfiles
 
 Restart your terminal when done.
 
+### Updating Symlinks Only
+
+After pulling changes to config files, re-link without re-running the full setup:
+
+```bash
+./setup.sh --link
+```
+
+This only refreshes symlinks for home dotfiles, config directories, `gh` config, and the `wt` command. Skips Homebrew, fonts, Oh My Zsh, pyenv, git config prompts, and everything else.
+
 ## What the Script Does
 
 1. Installs **Homebrew** if missing
