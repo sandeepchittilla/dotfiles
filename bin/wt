@@ -1,0 +1,217 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_NAME="$(basename "$0")"
+
+usage() {
+    cat <<'EOF'
+Usage: wt <branch-name> [--from main|current]
+       wt rm <branch-name>
+
+Create a git worktree as a sibling directory, copy .env, open a new
+terminal tab, and run uv sync.
+
+Commands:
+  rm               Remove a worktree and delete the local branch
+
+Options:
+  --from main      Branch from the repo's default branch (default)
+  --from current   Branch from the current HEAD
+  -h, --help       Show this help
+
+The branch name should follow conventional commits (e.g. feat/PG-123-desc).
+
+If the branch already exists locally or on the remote, it will be checked
+out. Otherwise a new branch is created from the base ref.
+
+Examples:
+  wt feat/PG-123-add-auth
+  wt fix/PG-456-null-check --from current
+  wt rm feat/PG-123-add-auth
+EOF
+    exit 0
+}
+
+# ── Handle subcommands ──────────────────────────────────────────────
+
+cmd_remove() {
+    local branch="$1"
+
+    if ! git rev-parse --is-inside-work-tree &>/dev/null; then
+        echo "Error: not inside a git repository" >&2
+        exit 1
+    fi
+
+    local repo_root repo_name worktree_dir
+    repo_root="$(git rev-parse --show-toplevel)"
+    repo_name="$(basename "$repo_root")"
+    worktree_dir="$(dirname "$repo_root")/${repo_name}-${branch//\//-}"
+
+    if [[ ! -d "$worktree_dir" ]]; then
+        echo "Error: worktree not found: $worktree_dir" >&2
+        exit 1
+    fi
+
+    echo "Removing worktree: $worktree_dir"
+    git worktree remove "$worktree_dir"
+
+    if git show-ref --verify --quiet "refs/heads/$branch" 2>/dev/null; then
+        echo "Deleting local branch: $branch"
+        git branch -D "$branch"
+    fi
+
+    echo ""
+    echo "Removed: $worktree_dir ($branch)"
+}
+
+# ── Parse args ──────────────────────────────────────────────────────
+
+if [[ "${1:-}" == "-h" ]] || [[ "${1:-}" == "--help" ]]; then
+    usage
+fi
+
+if [[ "${1:-}" == "rm" ]]; then
+    shift
+    if [[ -z "${1:-}" ]]; then
+        echo "Error: branch name required" >&2
+        echo "Usage: $SCRIPT_NAME rm <branch-name>" >&2
+        exit 1
+    fi
+    cmd_remove "$1"
+    exit 0
+fi
+
+BRANCH=""
+BASE="main"
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --from)
+            shift
+            case "${1:-}" in
+                main)    BASE="main" ;;
+                current) BASE="current" ;;
+                *) echo "Error: --from must be 'main' or 'current'" >&2; exit 1 ;;
+            esac
+            shift ;;
+        -h|--help) usage ;;
+        -*)  echo "Error: unknown option $1" >&2; exit 1 ;;
+        *)
+            if [[ -z "$BRANCH" ]]; then
+                BRANCH="$1"
+            else
+                echo "Error: unexpected argument '$1'" >&2; exit 1
+            fi
+            shift ;;
+    esac
+done
+
+if [[ -z "$BRANCH" ]]; then
+    echo "Error: branch name required" >&2
+    echo "Run '$SCRIPT_NAME --help' for usage." >&2
+    exit 1
+fi
+
+# ── Validate context ────────────────────────────────────────────────
+
+if ! git rev-parse --is-inside-work-tree &>/dev/null; then
+    echo "Error: not inside a git repository" >&2
+    exit 1
+fi
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+REPO_NAME="$(basename "$REPO_ROOT")"
+WORKTREE_DIR="$(dirname "$REPO_ROOT")/${REPO_NAME}-${BRANCH//\//-}"
+
+if [[ -d "$WORKTREE_DIR" ]]; then
+    echo "Error: directory already exists: $WORKTREE_DIR" >&2
+    exit 1
+fi
+
+# ── Fetch latest ────────────────────────────────────────────────────
+
+echo "Fetching latest from origin..."
+git fetch origin --quiet
+
+# ── Resolve base ref ────────────────────────────────────────────────
+
+if [[ "$BASE" == "main" ]]; then
+    DEFAULT_BRANCH=""
+    for candidate in main develop master; do
+        if git show-ref --verify --quiet "refs/remotes/origin/$candidate" 2>/dev/null; then
+            DEFAULT_BRANCH="$candidate"
+            break
+        fi
+    done
+    if [[ -z "$DEFAULT_BRANCH" ]]; then
+        echo "Error: could not find main/develop/master branch on origin" >&2
+        exit 1
+    fi
+    BASE_REF="origin/$DEFAULT_BRANCH"
+    echo "Base: $DEFAULT_BRANCH"
+else
+    BASE_REF="HEAD"
+    echo "Base: $(git rev-parse --abbrev-ref HEAD)"
+fi
+
+# ── Create worktree ─────────────────────────────────────────────────
+
+BRANCH_EXISTS=false
+if git show-ref --verify --quiet "refs/heads/$BRANCH" 2>/dev/null || \
+   git show-ref --verify --quiet "refs/remotes/origin/$BRANCH" 2>/dev/null; then
+    BRANCH_EXISTS=true
+fi
+
+if $BRANCH_EXISTS; then
+    echo "Branch '$BRANCH' exists, checking out..."
+    git worktree add "$WORKTREE_DIR" "$BRANCH"
+else
+    echo "Creating new branch '$BRANCH'..."
+    git worktree add -b "$BRANCH" "$WORKTREE_DIR" "$BASE_REF"
+fi
+
+# ── Copy .env ───────────────────────────────────────────────────────
+
+if [[ -f "$REPO_ROOT/.env" ]]; then
+    cp "$REPO_ROOT/.env" "$WORKTREE_DIR/.env"
+    echo "Copied .env"
+else
+    echo "Warning: no .env found in $REPO_ROOT"
+fi
+
+# ── Open terminal tab ──────────────────────────────────────────────
+
+TAB_TITLE="${BRANCH##*/}"  # last segment for a shorter title
+SETUP_CMD="cd '$WORKTREE_DIR' && uv sync && exec zsh -l"
+
+tab_opened=false
+
+# Kitty
+if [[ "${TERM_PROGRAM:-}" == "kitty" ]] || [[ -n "${KITTY_PID:-}" ]]; then
+    if kitty @ ls &>/dev/null 2>&1; then
+        kitty @ launch --type=tab --tab-title "$TAB_TITLE" --cwd "$WORKTREE_DIR" \
+            zsh -c "$SETUP_CMD"
+        kitty @ set-tab-title "$TAB_TITLE"
+        tab_opened=true
+    else
+        echo ""
+        echo "Kitty remote control is not enabled."
+        echo "Add to ~/.config/kitty/kitty.conf:"
+        echo "  allow_remote_control yes"
+        echo "Then restart Kitty."
+    fi
+# tmux
+elif [[ -n "${TMUX:-}" ]]; then
+    tmux new-window -n "$TAB_TITLE" -c "$WORKTREE_DIR" "zsh -c '$SETUP_CMD'"
+    tab_opened=true
+fi
+
+if ! $tab_opened; then
+    echo ""
+    echo "Open a new tab and run:"
+    echo "  cd $WORKTREE_DIR && uv sync"
+fi
+
+echo ""
+echo "Worktree ready: $WORKTREE_DIR"
+echo "Branch: $BRANCH"
