@@ -125,6 +125,10 @@ if [ -f "$HOME/google-cloud-sdk/path.zsh.inc" ]; then . "$HOME/google-cloud-sdk/
 if [ -f "$HOME/google-cloud-sdk/completion.zsh.inc" ]; then . "$HOME/google-cloud-sdk/completion.zsh.inc"; fi
 
 # aliases
+alias ls="eza"
+alias ll="eza -l"
+alias la="eza -la"
+lt() { eza --tree --level="${1:-2}"; }
 alias icat="kitty +kitten icat"
 
 LSCOLORS=ExFxBxDxCxegedabagacad
