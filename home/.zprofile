@@ -4,18 +4,9 @@ else
     eval "$(/usr/local/bin/brew shellenv)"
 fi
 
-# pyenv — global python outside of UV-managed projects
-command -v pyenv &>/dev/null && eval "$(pyenv init -)"
-
-
-# The next line updates PATH for the Google Cloud SDK.
-if [ -f "$HOME/google-cloud-sdk/path.zsh.inc" ]; then . "$HOME/google-cloud-sdk/path.zsh.inc"; fi
-
-# The next line enables shell command completion for gcloud.
-if [ -f "$HOME/google-cloud-sdk/completion.zsh.inc" ]; then . "$HOME/google-cloud-sdk/completion.zsh.inc"; fi
-
 # UV / local bin
 export PATH="$HOME/.local/bin:$PATH"
+export PATH="/Applications/Sublime Text.app/Contents/SharedSupport/bin:$PATH"
 
-# UV shell completions
-command -v uv &>/dev/null && eval "$(uv generate-shell-completion zsh)"
+# Everything else (pyenv, gcloud, completions) lives in .zshrc so it runs
+# after the p10k instant prompt has already painted.

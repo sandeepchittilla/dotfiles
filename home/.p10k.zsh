@@ -32,11 +32,13 @@
   # The list of segments shown on the left. Fill it with the most important segments.
   typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(
     os_icon                 # os identifier
-    context					# user or ssh or root
-    dir                     # current directory
+    dir_joined              # current directory (joins os_icon into one seamless pill)
     vcs                     # git status
     prompt_char           # prompt symbol
   )
+  # Note: `context` (user@host) is intentionally absent from the left prompt so that
+  # `dir_joined` attaches directly to `os_icon` (both bg=12) with no subsegment
+  # separator between them. context still appears in the right prompt for SSH/root.
 
   # The list of segments shown on the right. Fill it with less important segments.
   # Right prompt on the last prompt line (where you are typing your commands) gets
@@ -186,9 +188,9 @@
 
   #################################[ os_icon: os identifier ]##################################
   # OS identifier color.
-  typeset -g POWERLEVEL9K_OS_ICON_FOREGROUND=232
-  typeset -g POWERLEVEL9K_OS_ICON_BACKGROUND=15
-  # Custom icon.
+  typeset -g POWERLEVEL9K_OS_ICON_FOREGROUND=0
+  typeset -g POWERLEVEL9K_OS_ICON_BACKGROUND=12
+  # Custom icon
   typeset -g POWERLEVEL9K_OS_ICON_CONTENT_EXPANSION='👾'
 
   ################################[ prompt_char: prompt symbol ]################################

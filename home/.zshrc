@@ -135,4 +135,12 @@ LSCOLORS=ExFxBxDxCxegedabagacad
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-command -v npm &>/dev/null && export PATH="$(npm prefix -g)/bin:$PATH"
+
+# pyenv — global python outside of UV-managed projects
+command -v pyenv &>/dev/null && eval "$(pyenv init -)"
+
+# UV shell completions
+command -v uv &>/dev/null && eval "$(uv generate-shell-completion zsh)"
+
+# Machine-local secrets and overrides (not tracked in the dotfiles repo)
+[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
