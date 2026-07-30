@@ -90,6 +90,16 @@ plugins=(
   zsh-syntax-highlighting
 )
 
+# --- Startup performance tuning ---
+# Pin a single, stable completion-dump path so compinit reuses one cache
+# instead of re-scanning $fpath and re-dumping on (almost) every launch.
+export ZSH_COMPDUMP="$HOME/.cache/zsh/zcompdump"
+[[ -d "${ZSH_COMPDUMP:h}" ]] || mkdir -p "${ZSH_COMPDUMP:h}"
+# Skip compinit's world-writable security audit on every startup (~16ms).
+export ZSH_DISABLE_COMPFIX=true
+# Don't let oh-my-zsh do a blocking `git fetch` to check for updates.
+zstyle ':omz:update' mode disabled
+
 source $ZSH/oh-my-zsh.sh
 
 # User configuration
@@ -136,11 +146,21 @@ LSCOLORS=ExFxBxDxCxegedabagacad
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-# pyenv — global python outside of UV-managed projects
-command -v pyenv &>/dev/null && eval "$(pyenv init -)"
+# pyenv — global python outside of UV-managed projects.
+# --no-rehash keeps the shims on $PATH (python still resolves) but skips the
+# automatic shim rehash on every startup (~100ms). Run `pyenv rehash` manually
+# after installing a package that ships a new executable.
+command -v pyenv &>/dev/null && eval "$(pyenv init - --no-rehash zsh)"
 
-# UV shell completions
-command -v uv &>/dev/null && eval "$(uv generate-shell-completion zsh)"
+# UV shell completions — cache to disk instead of invoking the uv binary on
+# every startup (~68ms). Delete the cache (or `rm -rf ~/.cache/zsh`) after
+# upgrading uv to regenerate.
+if command -v uv &>/dev/null; then
+  _uv_comp="$HOME/.cache/zsh/uv-completion.zsh"
+  [[ -f "$_uv_comp" ]] || uv generate-shell-completion zsh >| "$_uv_comp"
+  source "$_uv_comp"
+  unset _uv_comp
+fi
 
 # Machine-local secrets and overrides (not tracked in the dotfiles repo)
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
