@@ -115,6 +115,20 @@ for cask in "${CASKS[@]}"; do
     fi
 done
 
+# ── 2b. herdr ─────────────────────────────────────────────────────
+# Deliberately not a brew formula: the official installer keeps `herdr
+# update` and its live handoff working, so upgrading doesn't kill open
+# agent sessions. Homebrew builds also lag the upstream releases.
+
+info "Checking herdr..."
+if command -v herdr &>/dev/null; then
+    ok "herdr $(herdr --version | awk '{print $2}') already installed (upgrade with: herdr update)"
+else
+    info "Installing herdr..."
+    curl -fsSL https://herdr.dev/install.sh | sh
+    ok "herdr installed"
+fi
+
 # ── 3. Fonts ──────────────────────────────────────────────────────
 
 FONT_DIR="$HOME/Library/Fonts"
@@ -300,6 +314,7 @@ if ! $LINK_ONLY; then
 echo "Installed:"
 echo "  - Homebrew packages: ${FORMULAE[*]}"
 echo "  - Casks: ${CASKS[*]}"
+echo "  - herdr (via herdr.dev installer — upgrade with: herdr update)"
 echo "  - Fonts: IBM Plex Mono, Hack Nerd Font"
 echo "  - Oh My Zsh + Powerlevel10k"
 echo "  - Plugins: zsh-autosuggestions, zsh-syntax-highlighting"

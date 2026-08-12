@@ -32,15 +32,16 @@ This only refreshes symlinks for home dotfiles, config directories, `gh` config,
 1. Installs **Homebrew** if missing
 2. Installs brew formulae: eza, gh, git-lfs, node, bun, pyenv, tmux, tree, uv (plus pyenv build deps: openssl, readline, sqlite3, xz, zlib)
 3. Installs brew casks: kitty, font-hack-nerd-font
-4. Installs **IBM Plex Mono** font from GitHub
-5. Installs **Oh My Zsh** with Powerlevel10k, zsh-autosuggestions, and zsh-syntax-highlighting (pinned versions)
-6. Symlinks home dotfiles (`.zshrc`, `.zprofile`, `.p10k.zsh`, `.vimrc`)
-7. Generates `.gitconfig` from template (prompts for name and email)
-8. Symlinks config directories (`kitty`, `git`) and copies `gh` config
-9. Installs `wt` worktree helper to `~/.local/bin`
-10. Installs **Python 3.13.3** via pyenv
-11. Sets up **Git LFS**
-12. Optionally installs **Google Cloud SDK**
+4. Installs **herdr** via the official `herdr.dev` installer — not Homebrew, so `herdr update` and its live handoff keep working
+5. Installs **IBM Plex Mono** font from GitHub
+6. Installs **Oh My Zsh** with Powerlevel10k, zsh-autosuggestions, and zsh-syntax-highlighting (pinned versions)
+7. Symlinks home dotfiles (`.zshrc`, `.zprofile`, `.p10k.zsh`, `.vimrc`)
+8. Generates `.gitconfig` from template (prompts for name and email)
+9. Symlinks config directories (`kitty`, `git`) and copies `gh` config
+10. Installs `wt` worktree helper to `~/.local/bin`
+11. Installs **Python 3.13.3** via pyenv
+12. Sets up **Git LFS**
+13. Optionally installs **Google Cloud SDK**
 
 Existing files are backed up with timestamps (e.g. `~/.zshrc.backup.20240101_120000`) before being replaced.
 
