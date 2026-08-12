@@ -25,7 +25,7 @@ After pulling changes to config files, re-link without re-running the full setup
 ./setup.sh --link
 ```
 
-This only refreshes symlinks for home dotfiles, config directories, `gh` config, and the `wt` command. Skips Homebrew, fonts, Oh My Zsh, pyenv, git config prompts, and everything else.
+This only refreshes symlinks for home dotfiles, config directories, `CLAUDE.md`, `gh` config, and the `wt` command. Skips Homebrew, fonts, Oh My Zsh, pyenv, git config prompts, and everything else.
 
 ## What the Script Does
 
@@ -37,7 +37,7 @@ This only refreshes symlinks for home dotfiles, config directories, `gh` config,
 6. Installs **Oh My Zsh** with Powerlevel10k, zsh-autosuggestions, and zsh-syntax-highlighting (pinned versions)
 7. Symlinks home dotfiles (`.zshrc`, `.zprofile`, `.p10k.zsh`, `.vimrc`)
 8. Generates `.gitconfig` from template (prompts for name and email)
-9. Symlinks config directories (`kitty`, `git`) and copies `gh` config
+9. Symlinks config directories (`kitty`, `git`), the global `~/.claude/CLAUDE.md`, and copies `gh` config
 10. Installs `wt` worktree helper to `~/.local/bin`
 11. Installs **Python 3.13.3** via pyenv
 12. Sets up **Git LFS**
@@ -51,6 +51,8 @@ Existing files are backed up with timestamps (e.g. `~/.zshrc.backup.20240101_120
 dotfiles/
 ├── bin/
 │   └── wt                    # Git worktree helper
+├── claude/
+│   └── CLAUDE.md             # Global Claude Code instructions -> ~/.claude/CLAUDE.md
 ├── config/
 │   ├── gh/                   # GitHub CLI config (copied, not symlinked)
 │   ├── git/                  # Git global ignore

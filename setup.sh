@@ -243,6 +243,13 @@ for dir in "${CONFIG_DIRS[@]}"; do
     fi
 done
 
+# Claude Code global instructions: link the file only, not ~/.claude
+# (that directory holds sessions, credentials and caches)
+mkdir -p "$HOME/.claude"
+if [[ -f "$DOTFILES_DIR/claude/CLAUDE.md" ]]; then
+    backup_and_link "$DOTFILES_DIR/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
+fi
+
 # gh config — copy file only, not the directory (hosts.yml contains auth tokens)
 mkdir -p "$HOME/.config/gh"
 if [[ -f "$DOTFILES_DIR/config/gh/config.yml" ]]; then
